@@ -352,7 +352,7 @@ const QuizResult: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center mb-4">
               <XCircle className="w-6 h-6 text-red-600 mr-2" />
-              <h3 className="text-lg font-semibold text-gray-900">Areas for Improvement</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Areas Improvement</h3>
               {showTavusAgent && (
                 <button
                   onClick={() => handleSendToAgent(evaluationResult.weaknesses.join(', '), 'Areas for Improvement')}
