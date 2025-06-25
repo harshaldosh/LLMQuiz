@@ -26,8 +26,8 @@ class LLMConfigService {
 
   getDefaultConfig(): LLMConfig {
     return {
-      provider: 'openai',
-      model: 'gpt-4'
+      provider: 'gemini',
+      model: 'gemini-flash'
     };
   }
 
