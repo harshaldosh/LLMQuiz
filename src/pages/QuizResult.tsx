@@ -307,7 +307,7 @@ const QuizResult: React.FC = () => {
 
         {/* Detailed Feedback */}
         <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Detailed Feedback</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Feedback</h2>
           
           <div className="prose max-w-none">
             <p className="text-gray-700 leading-relaxed">
