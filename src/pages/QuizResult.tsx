@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle, TrendingUp, TrendingDown, Lightbulb, Award } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, TrendingUp, TrendingDown, Lightbulb, Award, Video, Send, Copy, Check } from 'lucide-react';
 import { quizService } from '../services/quiz';
 import type { Quiz, QuizAttempt } from '../types/quiz';
 import toast from 'react-hot-toast';
+
+// Declare Daily as a global variable
+declare global {
+  interface Window {
+    Daily: any;
+  }
+}
+
+interface ConversationResponse {
+  conversation_url: string;
+  conversation_id: string;
+}
 
 const QuizResult: React.FC = () => {
   const { quizId, attemptId } = useParams<{ quizId: string; attemptId: string }>();
@@ -11,12 +23,29 @@ const QuizResult: React.FC = () => {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Tavus.io integration states
+  const [showTavusAgent, setShowTavusAgent] = useState(false);
+  const [tavusLoading, setTavusLoading] = useState(false);
+  const [conversationUrl, setConversationUrl] = useState('');
+  const [conversationId, setConversationId] = useState('');
+  const [dailyCallObject, setDailyCallObject] = useState<any>(null);
+  const [copiedText, setCopiedText] = useState('');
 
   useEffect(() => {
     if (quizId && attemptId) {
       loadResults();
     }
   }, [quizId, attemptId]);
+
+  // Cleanup Daily.js call object when component unmounts
+  useEffect(() => {
+    return () => {
+      if (dailyCallObject) {
+        dailyCallObject.destroy();
+      }
+    };
+  }, [dailyCallObject]);
 
   const loadResults = async () => {
     try {
@@ -41,6 +70,137 @@ const QuizResult: React.FC = () => {
       navigate('/');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createTavusConversation = async (): Promise<ConversationResponse> => {
+    const replicaId = import.meta.env.VITE_TAV_RESULT_COACH_REPLICAID;
+    const apiKey = import.meta.env.VITE_TAVUS_API_KEY;
+    
+    if (!replicaId || !apiKey) {
+      throw new Error('Tavus configuration missing. Please check environment variables.');
+    }
+
+    const response = await fetch('https://tavusapi.com/v2/conversations', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        replica_id: replicaId,
+        conversation_name: `Quiz Result Coaching - ${quiz?.title}`,
+        conversational_context: `You are a quiz result coach helping a student understand their performance. The student scored ${attempt?.evaluationResult?.score}/${attempt?.totalMarks} marks (${percentage}%) on "${quiz?.title}". Provide encouraging feedback and guidance for improvement.`,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `API Error: ${response.status}`);
+    }
+
+    return response.json();
+  };
+
+  const initializeDailyCallObject = async (url: string) => {
+    try {
+      if (!window.Daily) {
+        throw new Error('Daily.js library not loaded');
+      }
+
+      const callFrame = window.Daily.createFrame({
+        url: url,
+        showLeaveButton: false,
+        showFullscreenButton: false,
+      });
+
+      await callFrame.join();
+      setDailyCallObject(callFrame);
+      
+      return callFrame;
+    } catch (err) {
+      console.error('Failed to initialize Daily call object:', err);
+      throw err;
+    }
+  };
+
+  const sendTavusMessage = async (text: string) => {
+    if (!dailyCallObject || !conversationId) {
+      throw new Error('Daily call object not initialized or conversation ID missing');
+    }
+
+    try {
+      const interactionPayload = {
+        message_type: "conversation",
+        event_type: "conversation.respond",
+        conversation_id: conversationId,
+        properties: {
+          text: text
+        }
+      };
+
+      await dailyCallObject.sendAppMessage(interactionPayload);
+      return true;
+    } catch (err) {
+      console.error('Failed to send message to Tavus:', err);
+      throw err;
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedText(text);
+      setTimeout(() => setCopiedText(''), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+      throw err;
+    }
+  };
+
+  const handleLaunchTavusAgent = async () => {
+    setTavusLoading(true);
+    
+    try {
+      const conversation = await createTavusConversation();
+      setConversationUrl(conversation.conversation_url);
+      setConversationId(conversation.conversation_id);
+      setShowTavusAgent(true);
+
+      // Initialize Daily.js call object for message sending
+      try {
+        await initializeDailyCallObject(conversation.conversation_url);
+      } catch (err) {
+        console.warn('Failed to initialize Daily call object, falling back to clipboard:', err);
+      }
+      
+      toast.success('Tavus agent launched successfully!');
+    } catch (error) {
+      console.error('Failed to launch Tavus agent:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to launch Tavus agent');
+    } finally {
+      setTavusLoading(false);
+    }
+  };
+
+  const handleSendToAgent = async (content: string, type: string) => {
+    if (!content.trim()) return;
+
+    const message = `Here are my ${type.toLowerCase()}: ${content}`;
+
+    try {
+      if (dailyCallObject && conversationId) {
+        // Send message directly to Tavus conversation
+        await sendTavusMessage(message);
+        toast.success(`${type} sent to coach successfully!`);
+      } else {
+        // Fallback to clipboard
+        await copyToClipboard(message);
+        toast.success(`${type} copied to clipboard! You can paste it in the conversation.`);
+      }
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to send message');
     }
   };
 
@@ -163,6 +323,15 @@ const QuizResult: React.FC = () => {
             <div className="flex items-center mb-4">
               <CheckCircle className="w-6 h-6 text-green-600 mr-2" />
               <h3 className="text-lg font-semibold text-gray-900">Strengths</h3>
+              {showTavusAgent && (
+                <button
+                  onClick={() => handleSendToAgent(evaluationResult.strengths.join(', '), 'Strengths')}
+                  className="ml-auto p-1 text-green-600 hover:bg-green-50 rounded"
+                  title="Send strengths to coach"
+                >
+                  {dailyCallObject ? <Send className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </button>
+              )}
             </div>
             
             {evaluationResult.strengths.length > 0 ? (
@@ -184,6 +353,15 @@ const QuizResult: React.FC = () => {
             <div className="flex items-center mb-4">
               <XCircle className="w-6 h-6 text-red-600 mr-2" />
               <h3 className="text-lg font-semibold text-gray-900">Areas for Improvement</h3>
+              {showTavusAgent && (
+                <button
+                  onClick={() => handleSendToAgent(evaluationResult.weaknesses.join(', '), 'Areas for Improvement')}
+                  className="ml-auto p-1 text-red-600 hover:bg-red-50 rounded"
+                  title="Send weaknesses to coach"
+                >
+                  {dailyCallObject ? <Send className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </button>
+              )}
             </div>
             
             {evaluationResult.weaknesses.length > 0 ? (
@@ -205,6 +383,15 @@ const QuizResult: React.FC = () => {
             <div className="flex items-center mb-4">
               <Lightbulb className="w-6 h-6 text-yellow-600 mr-2" />
               <h3 className="text-lg font-semibold text-gray-900">Suggestions</h3>
+              {showTavusAgent && (
+                <button
+                  onClick={() => handleSendToAgent(evaluationResult.improvements.join(', '), 'Improvement Suggestions')}
+                  className="ml-auto p-1 text-yellow-600 hover:bg-yellow-50 rounded"
+                  title="Send suggestions to coach"
+                >
+                  {dailyCallObject ? <Send className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </button>
+              )}
             </div>
             
             {evaluationResult.improvements.length > 0 ? (
@@ -220,6 +407,58 @@ const QuizResult: React.FC = () => {
               <p className="text-sm text-gray-500">No specific suggestions provided.</p>
             )}
           </div>
+        </div>
+
+        {/* Tavus.io Agent Section */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <Video className="w-6 h-6 text-blue-600 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">Get Personalized Coaching</h3>
+            </div>
+            
+            {!showTavusAgent && (
+              <button
+                onClick={handleLaunchTavusAgent}
+                disabled={tavusLoading}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Video className="w-4 h-4 mr-2" />
+                {tavusLoading ? 'Launching...' : 'Launch AI Coach'}
+              </button>
+            )}
+          </div>
+          
+          {showTavusAgent ? (
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                Discuss your quiz results with our AI coach. Click the send buttons next to each section above to share specific feedback with your coach.
+              </p>
+              <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                <iframe
+                  src={conversationUrl}
+                  className="w-full h-full border-0"
+                  allow="camera; microphone; autoplay"
+                  title="Tavus AI Coach Conversation"
+                />
+              </div>
+              {dailyCallObject && (
+                <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+                  ✓ Direct message sending enabled - use the send buttons above to share your results
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">
+                Connect with our AI coach to get personalized feedback on your quiz performance and guidance for improvement.
+              </p>
+              <p className="text-sm text-gray-500">
+                The coach will help you understand your strengths, work on areas for improvement, and provide study recommendations.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Quiz Summary */}
