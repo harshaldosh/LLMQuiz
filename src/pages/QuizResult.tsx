@@ -108,11 +108,29 @@ const QuizResult: React.FC = () => {
         throw new Error('Daily.js library not loaded');
       }
 
-      const callFrame = window.Daily.createFrame({
-        url: url,
-        showLeaveButton: false,
-        showFullscreenButton: false,
-      });
+      const initializeDailyCallObject = async (url: string) => {
+      try {
+           if (!window.Daily) {
+              throw new Error('Daily.js library not loaded');
+            }
+
+            const callFrame = window.Daily.createFrame({
+               url: url,
+               showLeaveButton: false,
+               showFullscreenButton: false,
+               // NEW: Embed the call into the specified div
+               parent: document.getElementById('daily-iframe-container'),
+            });
+
+       await callFrame.join();
+       setDailyCallObject(callFrame);
+
+       return callFrame;
+       } catch (err) {
+       console.error('Failed to initialize Daily call object:', err);
+       throw err;
+  }
+  };
 
       await callFrame.join();
       setDailyCallObject(callFrame);
@@ -434,14 +452,11 @@ const QuizResult: React.FC = () => {
               <p className="text-gray-600">
                 Discuss your quiz results with our AI coach. Click the send buttons next to each section above to share specific feedback with your coach.
               </p>
-              /* <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                <iframe
-                  src={conversationUrl}
-                  className="w-full h-full border-0"
-                  allow="camera; microphone; autoplay"
-                  title="Tavus AI Coach Conversation"
-                /> 
-              </div> */
+              <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+               {/* This is where Daily.js will embed the video */}
+              <div id="daily-iframe-container" className="w-full h-full"></div>
+               </div>
+              
               {dailyCallObject && (
                 <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
                   ✓ Direct message sending enabled - use the send buttons above to share your results
