@@ -110,12 +110,22 @@ const QuizResult: React.FC = () => {
 
       const callFrame = window.Daily.createFrame({
         url: url,
-        showLeaveButton: false,
+        showLeaveButton: true,
         showFullscreenButton: false,
       });
 
       await callFrame.join();
       setDailyCallObject(callFrame);
+      // Left meeting event.
+      callFrame.on('left-meeting', () => {
+        console.log('Daily.js call ended or user left.');
+        setShowTavusAgent(false); // Hide the agent UI
+        setDailyCallObject(null); // Clear the dailyCallObject state
+        // Optionally, clear the conversation URL/ID if you want to reset fully
+        setConversationUrl('');
+        setConversationId('');
+        toast.success('AI Coach session ended.');
+      });
       
       return callFrame;
     } catch (err) {
