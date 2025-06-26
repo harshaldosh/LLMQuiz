@@ -435,12 +435,7 @@ const QuizResult: React.FC = () => {
                 Discuss your quiz results with our AI coach. Click the send buttons next to each section above to share specific feedback with your coach.
               </p>
               <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                <iframe
-                  src={conversationUrl}
-                  className="w-full h-full border-0"
-                  allow="camera; microphone; autoplay"
-                  title="Tavus AI Coach Conversation"
-                />
+                
               </div>
               {dailyCallObject && (
                 <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
