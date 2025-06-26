@@ -427,6 +427,12 @@ const QuizResult: React.FC = () => {
                 {tavusLoading ? 'Launching...' : 'Launch AI Coach'}
               </button>
             )}
+            {showTavusAgent && dailyCallObject && (
+               <button
+                  onClick={() => dailyCallObject.leave()}
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+               >End AI Coach Call</button>
+            )}
           </div>
           
           {showTavusAgent ? (
