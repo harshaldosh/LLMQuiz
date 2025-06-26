@@ -108,29 +108,13 @@ const QuizResult: React.FC = () => {
         throw new Error('Daily.js library not loaded');
       }
 
-      const initializeDailyCallObject = async (url: string) => {
-      try {
-           if (!window.Daily) {
-              throw new Error('Daily.js library not loaded');
-            }
-
-            const callFrame = window.Daily.createFrame({
-               url: url,
-               showLeaveButton: false,
-               showFullscreenButton: false,
-               // NEW: Embed the call into the specified div
-               parent: document.getElementById('daily-iframe-container'),
-            });
-
-       await callFrame.join();
-       setDailyCallObject(callFrame);
-
-       return callFrame;
-       } catch (err) {
-       console.error('Failed to initialize Daily call object:', err);
-       throw err;
-  }
-  };
+      const callFrame = window.Daily.createFrame({
+        url: url,
+        showLeaveButton: false,
+        showFullscreenButton: false,
+        // Embed the call into the specified div
+        parent: document.getElementById('daily-iframe-container'),
+      });
 
       await callFrame.join();
       setDailyCallObject(callFrame);
