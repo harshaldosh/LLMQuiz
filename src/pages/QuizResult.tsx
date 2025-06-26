@@ -112,11 +112,17 @@ const QuizResult: React.FC = () => {
         url: url,
         showLeaveButton: false,
         showFullscreenButton: false,
-        // Embed the call into the specified div
-        parent: document.getElementById('daily-iframe-container'),
       });
 
       await callFrame.join();
+      
+      // Manually append the iframe to the container
+      const container = document.getElementById('daily-iframe-container');
+      const iframe = callFrame.iframe();
+      if (container && iframe) {
+        container.appendChild(iframe);
+      }
+      
       setDailyCallObject(callFrame);
       
       return callFrame;
