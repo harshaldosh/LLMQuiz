@@ -27,7 +27,7 @@ class LLMConfigService {
   getDefaultConfig(): LLMConfig {
     return {
       provider: 'gemini',
-      model: 'gemini-flash'
+      model: 'gemini-2.0-flash'
     };
   }
 
