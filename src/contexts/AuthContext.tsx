@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   // Check if user is admin
-  const isAdmin = user?.email === 'harshal9901@gmail.com' || 
+  const isAdmin = user?.email === 'admin@admin.com' || 
                   user?.user_metadata?.role === 'admin' ||
                   user?.app_metadata?.role === 'admin';
 
