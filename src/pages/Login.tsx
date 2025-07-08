@@ -171,7 +171,7 @@ const Login: React.FC = () => {
                 <p className="text-sm sm:text-base text-gray-600 mb-2">
                   <strong>Admin Account:</strong>
                 </p>
-                <p className="text-xs sm:text-sm text-gray-500 mb-1">Email: harshal9901@gmail.com</p>
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">Email: admin@admin.com</p>
                 <p className="text-xs sm:text-sm text-gray-500">Password: admin@123</p>
               </div>
               
