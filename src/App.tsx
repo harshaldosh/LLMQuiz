@@ -34,9 +34,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
-            {/* Quiz routes (public access via URL) */}
-            <Route path="/quiz/:id" element={<QuizTake />} />
-            <Route path="/quiz/:quizId/result/:attemptId" element={<QuizResult />} />
+            {/* Quiz routes (protected) */}
+            <Route path="/quiz/:id" element={<ProtectedRoute><QuizTake /></ProtectedRoute>} />
+            <Route path="/quiz/:quizId/result/:attemptId" element={<ProtectedRoute><QuizResult /></ProtectedRoute>} />
             
             {/* Protected routes with Layout */}
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
