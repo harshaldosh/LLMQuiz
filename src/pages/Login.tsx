@@ -30,7 +30,7 @@ const Login: React.FC = () => {
       await signIn(email, password);
       
       // Check if admin and redirect accordingly
-      if (email === 'harshal9901@gmail.com') {
+      if (email === 'admin@admin.com') {
         navigate('/admin', { replace: true });
       } else {
         navigate(from, { replace: true });
