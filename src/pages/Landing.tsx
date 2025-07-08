@@ -35,7 +35,7 @@ const Landing: React.FC = () => {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <BookOpen className="w-8 h-8 text-primary-600 mr-2" />
-              <span className="text-2xl font-bold text-gray-900">EduSaaS</span>
+              <span className="text-2xl font-bold text-gray-900">LLMQUIZ</span>
             </div>
             
             <div className="flex items-center space-x-4">
